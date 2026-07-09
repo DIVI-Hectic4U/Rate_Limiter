@@ -1,7 +1,15 @@
+#include<chrono>
 #include<iostream>
+
+#include "RateLimiter.h"
 
 int main(){
 
-    std:: cout << "Welcome to Rate Limiter from Sractch\n";
+    RateLimiter limiter(5,std::chrono::seconds(60));
+
+    std::cout << std::boolalpha;
+
+    std::cout << limiter.allowRequests("Alice") << '\n';
+
     return 0;
 }
