@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "../include/algorithms/FixedWindowLimiter.h"
+#include "../include/algorithms/SlidingWindowLogLimiter.h"
 #include "../include/http/HttpServer.h"
 
 int main()
@@ -13,7 +14,8 @@ int main()
             .maxRequests = 5,
             .windowSize = std::chrono::seconds(60)};
 
-        FixedWindowLimiter limiter(config);
+        // FixedWindowLimiter limiter(config);
+        SlidingWindowLogLimiter limiter(config);
 
         HttpServer server(limiter);
 

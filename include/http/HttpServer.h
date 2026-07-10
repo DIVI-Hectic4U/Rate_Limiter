@@ -1,14 +1,17 @@
 #pragma once
 
-#include "../algorithms/FixedWindowLimiter.h"
+#include "../core/IRateLimiter.h"
 
+namespace crow{
+    class SimpleApp;
+}
 class HttpServer
 {
 public:
-    explicit HttpServer(FixedWindowLimiter &limiter);
+    explicit HttpServer(IRateLimiter& limiter);
 
     void start();
 
 private:
-    FixedWindowLimiter &limiter_;
+    IRateLimiter& limiter_;
 };

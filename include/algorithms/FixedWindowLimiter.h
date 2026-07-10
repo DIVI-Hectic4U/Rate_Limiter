@@ -6,12 +6,13 @@
 
 #include "../core/Config.h"
 #include "../core/FixedWindowData.h"
+#include "../core/IRateLimiter.h"
 
-class FixedWindowLimiter{
+class FixedWindowLimiter : public IRateLimiter{
     public:
         explicit FixedWindowLimiter(const Config& config);
 
-        bool allowRequest(const std::string& clientId);
+        bool allowRequest(const std::string& clientId) override;
     
     private:
         Config config_;

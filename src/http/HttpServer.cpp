@@ -2,7 +2,7 @@
 
 #include <crow.h>
 
-HttpServer::HttpServer(FixedWindowLimiter& limiter)
+HttpServer::HttpServer(IRateLimiter& limiter)
         :limiter_(limiter)
 {
 }
@@ -25,7 +25,12 @@ void HttpServer::start()
 
         if(!body)
         {
-            return crow::response(400);
+            return crow::response(400, "Invalid JSON payload");
+        }
+
+        if(!body.has("clientId"))
+        {
+            return crow::response(400, "Missing 'clientId' key in JSON");
         }
 
         std::string clientId = body["clientId"].s();
@@ -33,7 +38,6 @@ void HttpServer::start()
         bool allowed = limiter_.allowRequest(clientId);
 
         crow::json::wvalue response;
-
         response["allowed"] = allowed;
 
         return crow::response(

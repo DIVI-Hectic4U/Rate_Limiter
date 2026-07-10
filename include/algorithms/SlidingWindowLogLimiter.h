@@ -5,13 +5,14 @@
 
 #include "../core/Config.h"
 #include "../core/SlidingWindowData.h"
+#include "../core/IRateLimiter.h"
 
-class SlidingWindowLogLimiter
+class SlidingWindowLogLimiter : public IRateLimiter
 {
 public:
     explicit SlidingWindowLogLimiter(const Config& config);
 
-    bool allowRequest(const std::string& clientId);
+    bool allowRequest(const std::string& clientId) override;
 
 private:
     Config config_;
