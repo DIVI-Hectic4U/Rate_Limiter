@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "../include/algorithms/FixedWindowLimiter.h"
+#include "../include/simulator/Simulator.h"
 
 int main()
 {
@@ -12,16 +13,10 @@ int main()
 
     FixedWindowLimiter limiter(config);
 
-    std::cout << std::boolalpha;
+    Simulator simulator(limiter);
 
-    for(int i = 1 ; i <= 7; i++){
-        std::cout
-            << "Requests "
-            << i
-            << " : "
-            << limiter.allowRequest("Alice")
-            << '\n';
-    }
+    simulator.run();
 
+    
     return 0;
 }
