@@ -11,16 +11,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Crow CONFIG REQUIRED)
 
-include_directories(include)
-
-file(GLOB_RECURSE SOURCES 
-    src/*.cpp
-)
-
+#Explicitly added list for reliable build
 add_executable(
     RateLimiter
-    ${SOURCES}
+    src/main.cpp
+    src/http/HttpServer.cpp
+    src/algorithms/FixedWindowLimiter.cpp
+    src/algorithms/SlidingWindowLimiter.cpp
 )
+
+target_include_directories(RateLimiter PRIVATE include)
 
 target_link_libraries(
     RateLimiter

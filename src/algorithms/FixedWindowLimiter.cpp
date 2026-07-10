@@ -20,25 +20,26 @@ bool FixedWindowLimiter::allowRequest(const std::string& clientId)
 {
     auto now = std::chrono::steady_clock::now();
 
-    if (!storage_.contains(clientId))
+    auto it = users_.find(clientId);
+
+    if(it == users_.end())
     {
-        storage_.insert(clientId, UserData{1, now});
+        users_.emplace(clientId, FixedWindowData{1,now});
         return true;
     }
-
-    UserData* user = storage_.get(clientId);
-
-    auto elapsed = now - user->windowStart;
+    
+    FixedWindowData& user = it->second;
+    auto elapsed = now - user.windowStart;
 
     if (elapsed >= config_.windowSize)
     {
-        *user = UserData{1, now};
+        user = FixedWindowData{1,now};
         return true;
     }
 
-    if (user->requestCount < config_.maxRequests)
+    if (user.requestCount < config_.maxRequests)
     {
-        ++user->requestCount;
+        ++user.requestCount;
         return true;
     }
 
