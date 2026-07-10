@@ -6,6 +6,7 @@
 #include "../include/algorithms/SlidingWindowLogLimiter.h"
 #include "../include/algorithms/SlidingWindowCounterLimiter.h"
 #include "../include/algorithms/TokenBucketLimiter.h"
+#include "../include/algorithms/LeakyBucketLimiter.h"
 #include "../include/http/HttpServer.h"
 
 int main()
@@ -19,7 +20,8 @@ int main()
         // FixedWindowLimiter limiter(config);
         // SlidingWindowLogLimiter limiter(config);
         // SlidingWindowCounterLimiter limiter(config);
-        TokenBucketLimiter limiter(config);
+        // TokenBucketLimiter limiter(config);
+        LeakyBucketLimiter limiter(config);
 
         HttpServer server(limiter);
 

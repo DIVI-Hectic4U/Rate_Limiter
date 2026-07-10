@@ -20,6 +20,7 @@ add_executable(
     src/algorithms/SlidingWindowLimiter.cpp
     src/algorithms/SlidingWindowCounterLimiter.cpp
     src/algorithms/TokenBucketLimiter.cpp
+    src/algorithms/LeakyBucketLimiter.cpp
 )
 
 target_include_directories(RateLimiter PRIVATE include)
