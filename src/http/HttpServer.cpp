@@ -7,17 +7,19 @@ HttpServer::HttpServer(IRateLimiter& limiter)
 {
 }
 
-void HttpServer::start()
+void HttpServer::setupRoutes(crow::SimpleApp& app)
 {
-    crow::SimpleApp app;
-
-    CROW_ROUTE(app, "/")
+    // 1.Health Check Endpoint (For Docker/Kubernetes)
+    CROW_ROUTE(app,"/health")
     ([]()
     {
-        return "Rate Limiter Service";
+        crow::json::wvalue response;
+        response["status"] = "UP";
+        return crow::response(200,response);
     });
 
-    CROW_ROUTE(app, "/rate-limit")
+    // 2.Versioned API EndPoint
+    CROW_ROUTE(app, "/api/v1/rate-limit")
         .methods(crow::HTTPMethod::Post)
     ([this](const crow::request& req)
     {
@@ -25,27 +27,42 @@ void HttpServer::start()
 
         if(!body)
         {
-            return crow::response(400, "Invalid JSON payload");
+            crow::json::wvalue error;
+            error["error"] = "Invalid JSON payload";
+            return crow::response(400, error);
         }
 
         if(!body.has("clientId"))
         {
-            return crow::response(400, "Missing 'clientId' key in JSON");
+            crow::json::wvalue error;
+            error["error"] = "Missing 'clientId' key in JSON.";
+            return crow::response(400,error);
         }
 
         std::string clientId = body["clientId"].s();
 
         bool allowed = limiter_.allowRequest(clientId);
 
-        crow::json::wvalue response;
-        response["allowed"] = allowed;
+        crow::json::wvalue body_response;
+        body_response["clientId"] = clientId;
+        body_response["allowed"] = allowed;
 
-        return crow::response(
-            allowed ? 200 : 429,
-            response
-        );
+        // 3. Construct the response with proper status codes
+        auto res = crow::response(allowed ? 200 : 429, body_response);
+
+        // 4. Inject Standard Rate Limit HTTP headers
+        res.add_header("X-RateLimit-Allowed", allowed ? "true" : "false");
+
+        return res;
     });
+}
 
+void HttpServer::start()
+{
+    crow::SimpleApp app;
+    
+    setupRoutes(app);
+    
     app.bindaddr("127.0.0.1")
         .port(8080)
         .multithreaded()
