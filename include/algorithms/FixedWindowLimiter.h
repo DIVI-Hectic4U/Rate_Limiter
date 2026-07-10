@@ -1,9 +1,7 @@
 #pragma once
 
-#include<unordered_map>
-
 #include "../core/Config.h"
-#include "../core/UserData.h"
+#include "../storage/InMemoryStorage.h"
 
 class FixedWindowLimiter{
     public:
@@ -13,5 +11,5 @@ class FixedWindowLimiter{
     
     private:
         Config config_;
-        std::unordered_map<std::string,UserData> users_;
+        InMemoryStorage storage_;
 };
