@@ -1,8 +1,7 @@
 #include <chrono>
-#include <iostream>
 
 #include "../include/algorithms/FixedWindowLimiter.h"
-#include "../include/simulator/Simulator.h"
+#include "../include/http/HttpServer.h"
 
 int main()
 {
@@ -13,10 +12,7 @@ int main()
 
     FixedWindowLimiter limiter(config);
 
-    Simulator simulator(limiter);
-
-    simulator.run();
-
+    HttpServer server(limiter);
     
-    return 0;
+    server.start();
 }
