@@ -4,6 +4,7 @@
 
 #include "../include/algorithms/FixedWindowLimiter.h"
 #include "../include/algorithms/SlidingWindowLogLimiter.h"
+#include "../include/algorithms/SlidingWindowCounterLimiter.h"
 #include "../include/http/HttpServer.h"
 
 int main()
@@ -15,7 +16,8 @@ int main()
             .windowSize = std::chrono::seconds(60)};
 
         // FixedWindowLimiter limiter(config);
-        SlidingWindowLogLimiter limiter(config);
+        // SlidingWindowLogLimiter limiter(config);
+        SlidingWindowCounterLimiter limiter(config);
 
         HttpServer server(limiter);
 

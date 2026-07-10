@@ -18,6 +18,7 @@ add_executable(
     src/http/HttpServer.cpp
     src/algorithms/FixedWindowLimiter.cpp
     src/algorithms/SlidingWindowLimiter.cpp
+    src/algorithms/SlidingWindowCounterLimiter.cpp
 )
 
 target_include_directories(RateLimiter PRIVATE include)
