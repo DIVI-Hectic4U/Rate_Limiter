@@ -23,6 +23,8 @@ bool RateLimiter::allowRequests(const std::string& clientId){
 
     auto it = clients.find(clientId);
 
+    // new Client
+
     if(it == clients.end()){
 
         UserData newUser;
@@ -33,6 +35,17 @@ bool RateLimiter::allowRequests(const std::string& clientId){
         clients.emplace(clientId,newUser);
 
         return true;
+    }
+
+    // Existing Client
+    UserData &user = it->second;
+
+    auto elapsed = now - user.windowStart;
+
+    if(elapsed >= windowDuration){
+
+        user.requestCount = 1;
+        user.windowStart = now;
     }
 
     return false;
