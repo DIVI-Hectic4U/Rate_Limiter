@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 
+
 LeakyBucketLimiter::LeakyBucketLimiter(const Config& config)
     : config_(config)
 {
@@ -15,10 +16,15 @@ LeakyBucketLimiter::LeakyBucketLimiter(const Config& config)
     {
         throw std::invalid_argument("windowSize must be greater than zero.");
     }
+
+    auto windowSeconds = std::chrono::duration_cast<std::chrono::seconds>(config_.windowSize).count();
+    leakRatePerSecond_ = static_cast<double>(config_.maxRequests) / windowSeconds;
 }
 
 bool LeakyBucketLimiter::allowRequest(const std::string& clientId)
 {
+    //------THREAD SAFETY--------
+    std::lock_guard<std::mutex> lock(mutex_);
     auto now = std::chrono::steady_clock::now();
 
     auto it = users_.find(clientId);

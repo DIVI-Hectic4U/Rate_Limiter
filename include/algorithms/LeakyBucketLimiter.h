@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <chrono>
+#include <mutex>
 
 #include "../core/Config.h"
 #include "../core/LeakyBucketData.h"
@@ -17,4 +18,6 @@ private:
     Config config_;
     std::unordered_map<std::string, LeakyBucketData> users_;
     double leakRatePerSecond_; // Pre-Computed for performance
+
+    std::mutex mutex_;
 };

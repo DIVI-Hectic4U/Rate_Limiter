@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef ENABLE_REDIS
+
 #include <string>
 #include <memory>
 #include <sw/redis++/redis++.h>
@@ -17,3 +19,5 @@ private:
     Config config_;
     std::unique_ptr<sw::redis::Redis> redis_;
 };
+
+#endif

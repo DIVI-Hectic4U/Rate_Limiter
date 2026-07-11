@@ -1,5 +1,6 @@
-#include "../../include/algorithms/RedisFixedWindowLimiter.h"
+#ifdef ENABLE_REDIS
 
+#include "../../include/algorithms/RedisFixedWindowLimiter.h"
 #include <stdexcept>
 #include <chrono>
 
@@ -55,3 +56,5 @@ bool RedisFixedWindowLimiter::allowRequest(const std::string& clientId)
         throw std::runtime_error(std::string("Redis operation Failed: ") + e.what());
     }
 }
+
+#endif
