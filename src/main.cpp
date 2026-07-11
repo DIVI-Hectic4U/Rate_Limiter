@@ -7,6 +7,7 @@
 #include "../include/algorithms/SlidingWindowCounterLimiter.h"
 #include "../include/algorithms/TokenBucketLimiter.h"
 #include "../include/algorithms/LeakyBucketLimiter.h"
+#include "../include/algorithms/RedisFixedWindowLimiter.h"
 #include "../include/http/HttpServer.h"
 
 int main()
@@ -21,8 +22,12 @@ int main()
         // SlidingWindowLogLimiter limiter(config);
         // SlidingWindowCounterLimiter limiter(config);
         // TokenBucketLimiter limiter(config);
-        LeakyBucketLimiter limiter(config);
+        // LeakyBucketLimiter limiter(config);
 
+        std::cout << "Connecting to Redis cluster...\n";
+        RedisFixedWindowLimiter limiter(config, "tcp://127.0.0.1:6379");
+
+        std::cout << "Starting HTTP Server...\n";
         HttpServer server(limiter);
 
         server.start();

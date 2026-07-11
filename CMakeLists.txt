@@ -10,6 +10,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Crow CONFIG REQUIRED)
+find_package(hiredis CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 #Explicitly added list for reliable build
 add_executable(
@@ -21,12 +23,16 @@ add_executable(
     src/algorithms/SlidingWindowCounterLimiter.cpp
     src/algorithms/TokenBucketLimiter.cpp
     src/algorithms/LeakyBucketLimiter.cpp
+    src/algorithms/RedisFixedWindowLimiter.cpp
 )
 
 target_include_directories(RateLimiter PRIVATE include)
 
 target_link_libraries(
     RateLimiter
-    PRIVATE Crow::Crow
+    PRIVATE 
+        Crow::Crow
+        redis++::redis++
+        hiredis::hiredis
 )
 
