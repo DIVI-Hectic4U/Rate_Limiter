@@ -1,0 +1,124 @@
+name: CI Build & Test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # --- 1. Checkout code ---
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --- 2. Install build dependencies ---
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            git \
+            libasio-dev \
+            libhiredis-dev \
+            libboost-all-dev
+
+      # --- 3. Install Crow from source ---
+      - name: Install Crow framework
+        run: |
+          git clone https://github.com/CrowCpp/Crow.git /tmp/Crow
+          cd /tmp/Crow
+          mkdir build && cd build
+          cmake .. -DCROW_BUILD_EXAMPLES=OFF -DCROW_BUILD_TESTS=OFF
+          sudo make install
+
+      # --- 4. Build project with tests (no Redis for unit tests) ---
+      - name: Configure and build
+        run: |
+          mkdir -p build && cd build
+          cmake .. -DENABLE_REDIS=OFF -DENABLE_TESTS=ON
+          make -j$(nproc)
+
+      # --- 5. Run unit tests ---
+      - name: Run GoogleTest suite
+        run: |
+          cd build
+          ./run_tests --gtest_output=xml:test_results.xml
+
+      # --- 6. Upload test results as artifact ---
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: build/test_results.xml
+
+  # --- Docker integration test (full stack with Redis) ---
+  docker-integration:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker compose build
+
+      - name: Start services
+        run: docker compose up -d
+
+      - name: Wait for API readiness
+        run: |
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+              -H "Content-Type: application/json" \
+              -d '{"clientId":"ci_health_check"}' \
+              http://localhost:8080/api/v1/rate-limit 2>/dev/null || echo "000")
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "429" ]; then
+              echo "API is ready (attempt $i, status: $STATUS)"
+              break
+            fi
+            echo "Waiting for API... (attempt $i, status: $STATUS)"
+            sleep 2
+            if [ "$i" -eq 30 ]; then
+              echo "API failed to start"
+              docker compose logs
+              exit 1
+            fi
+          done
+
+      - name: Smoke test - Rate limiting works
+        run: |
+          echo "=== Sending 7 requests (limit is 5) ==="
+          ALLOWED=0
+          DENIED=0
+          for i in $(seq 1 7); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+              -H "Content-Type: application/json" \
+              -d '{"clientId":"ci_test_client"}' \
+              http://localhost:8080/api/v1/rate-limit)
+            echo "Request $i: HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              ALLOWED=$((ALLOWED + 1))
+            elif [ "$STATUS" = "429" ]; then
+              DENIED=$((DENIED + 1))
+            fi
+          done
+          echo ""
+          echo "Allowed: $ALLOWED, Denied: $DENIED"
+          # Verify: exactly 5 allowed, 2 denied
+          if [ "$ALLOWED" -eq 5 ] && [ "$DENIED" -eq 2 ]; then
+            echo "✅ Rate limiting is working correctly!"
+          else
+            echo "❌ Rate limiting behavior unexpected!"
+            exit 1
+          fi
+
+      - name: Tear down services
+        if: always()
+        run: docker compose down
