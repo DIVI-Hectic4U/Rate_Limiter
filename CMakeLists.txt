@@ -59,3 +59,59 @@ if(ENABLE_REDIS)
     target_link_libraries(RateLimiter PRIVATE ${REDIS_PLUS_PLUS_LIB} ${HIREDIS_LIB})
     target_compile_definitions(RateLimiter PRIVATE ENABLE_REDIS)
 endif()
+
+# ==============================================================================
+# TESTING (Phase 3) — GoogleTest via FetchContent
+# ==============================================================================
+# Usage: cmake .. -DENABLE_TESTS=ON
+# Why FetchContent? It downloads GoogleTest at configure time so we don't need
+# system-installed libgtest-dev. Works identically on Ubuntu, Alpine, and CI.
+
+option(ENABLE_TESTS "Build the GoogleTest test suite" OFF)
+
+if(ENABLE_TESTS)
+    include(FetchContent)
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG        v1.14.0
+    )
+    # Prevent GoogleTest from overriding our compiler/linker settings
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+
+    enable_testing()
+
+    # --- Test-only algorithm sources (no main.cpp, no HttpServer, no Redis) ---
+    # This isolates unit tests from networking dependencies.
+    set(TEST_ALGO_SOURCES
+        src/algorithms/FixedWindowLimiter.cpp
+        src/algorithms/TokenBucketLimiter.cpp
+        src/algorithms/LeakyBucketLimiter.cpp
+        src/algorithms/SlidingWindowLogLimiter.cpp
+        src/algorithms/SlidingWindowCounterLimiter.cpp
+    )
+
+    set(TEST_SOURCES
+        tests/test_fixed_window.cpp
+        tests/test_token_bucket.cpp
+        tests/test_leaky_bucket.cpp
+        tests/test_sliding_window_log.cpp
+        tests/test_sliding_window_counter.cpp
+        tests/test_concurrency.cpp
+    )
+
+    add_executable(run_tests ${TEST_SOURCES} ${TEST_ALGO_SOURCES})
+
+    target_include_directories(run_tests PRIVATE include)
+
+    target_link_libraries(
+        run_tests
+        PRIVATE
+            GTest::gtest_main
+            Threads::Threads
+    )
+
+    include(GoogleTest)
+    gtest_discover_tests(run_tests)
+endif()

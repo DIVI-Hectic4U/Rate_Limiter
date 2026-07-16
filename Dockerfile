@@ -32,13 +32,13 @@ RUN git clone https://github.com/sewenew/redis-plus-plus.git /tmp/redis-plus-plu
 WORKDIR /app
 COPY . .
 
-# 4. Compile the C++ application with Redis Explicitly enabled !
+# 4. Compile the C++ application with Redis AND Tests enabled
 RUN mkdir -p build && cd build \
-    && cmake .. -DENABLE_REDIS=ON \
-    && make
+    && cmake .. -DENABLE_REDIS=ON -DENABLE_TESTS=ON \
+    && make -j$(nproc)
 
 # Expose the API PORT
 EXPOSE 8080
 
-# Start the Server
+# Start the Server (tests are run separately via: docker run <image> ./build/run_tests)
 CMD ["./build/RateLimiter"]
