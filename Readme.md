@@ -71,7 +71,7 @@ sequenceDiagram
     end
 ```
 **Throughput:** 2,483 Req/sec | **Avg Latency:** 79.09ms (Network bound)  
-![Redis Fixed Window Benchmark](images/Redis_fixed_window_limiter.png)
+![Redis Fixed Window Benchmark](Images/Redis_fixed_window_limiter.png)
 
 ### 2. In-Memory Token Bucket 🏆
 Allows burst traffic up to a maximum bucket size, refilling tokens at a constant rate. Offers the lowest latency by minimizing CPU lock time using floating-point timestamp math.
@@ -85,7 +85,7 @@ graph LR
     Bucket --> |Tokens == 0| Deny[429 Reject]
 ```
 **Throughput:** 1,634 Req/sec | **Avg Latency:** 3.14ms (Lowest!) | **Max Latency:** 15.46ms  
-![Token Bucket Benchmark](images/token_bucket_limiter.png)
+![Token Bucket Benchmark](Images/token_bucket_limiter.png)
 
 ### 3. In-Memory Fixed Window
 Counters reset precisely at window boundaries (e.g., at exactly 12:00:00, 12:01:00). Subject to the "boundary burst" problem but extremely memory efficient.
@@ -99,7 +99,7 @@ graph TD
     Max -->|No| Reject[429 Reject]
 ```
 **Throughput:** 1,922 Req/sec | **Avg Latency:** 77.45ms  
-![Fixed Window Benchmark](images/fixed_window_In_memory_limiter.png)
+![Fixed Window Benchmark](Images/fixed_window_In_memory_limiter.png)
 
 ### 4. In-Memory Leaky Bucket
 A FIFO queue that enforces a strictly constant output rate (smooths traffic). Requests exceeding the queue capacity are immediately dropped.
@@ -111,7 +111,7 @@ graph LR
     Req --> |Bucket Full| Drop[Dropped 429]
 ```
 **Throughput:** ~1,600 Req/sec | **Avg Latency:** 4.63ms  
-![Leaky Bucket Benchmark](images/leaky_bucket_limiter.png)
+![Leaky Bucket Benchmark](Images/leaky_bucket_limiter.png)
 
 ### 5. Sliding Window Log
 Stores the exact timestamp of every request in a `std::deque`. Provides 100% accurate enforcement by evicting timestamps older than the window, preventing boundary bursts, but consumes more memory.
@@ -125,7 +125,7 @@ graph TD
     Check -->|No| Reject[429 Reject]
 ```
 **Throughput:** 1,609 Req/sec | **Avg Latency:** 11.26ms  
-![Sliding Window Log Benchmark](images/sliding_window_log_limiter.png)
+![Sliding Window Log Benchmark](Images/sliding_window_log_limiter.png)
 
 ### 6. Sliding Window Counter
 A hybrid approach that uses a weighted mathematical estimate based on the previous window's counter and the overlap of the current window. Balances high accuracy with low memory footprint.
@@ -141,7 +141,7 @@ graph LR
     Check --> |No| Deny[429 Reject]
 ```
 **Throughput:** 1,879 Req/sec | **Avg Latency:** 8.22ms  
-![Sliding Window Counter Benchmark](images/sliding_window_counter_limiter.png)
+![Sliding Window Counter Benchmark](Images/sliding_window_counter_limiter.png)
 
 ## 💡 Use Cases (When to use what)
 
@@ -164,14 +164,14 @@ Extensive concurrency sweeps were performed using `wrk` across different load pr
 | **Stress** | 1000 | 12 | Max lock contention tested |
 
 **Redis Load Profile Results:**
-- **Light:** ![Light Load](images/redis_fixed_window_Light.png)
-- **Medium:** ![Medium Load](images/redis_fixed_window_Medium.png)
-- **Heavy:** ![Heavy Load](images/redis_fixed_window_Heavy.png)
-- **Stress:** ![Stress Test](images/redis_fixed_window_Stress_Test.png)
+- **Light:** ![Light Load](Images/redis_fixed_window_Light.png)
+- **Medium:** ![Medium Load](Images/redis_fixed_window_Medium.png)
+- **Heavy:** ![Heavy Load](Images/redis_fixed_window_Heavy.png)
+- **Stress:** ![Stress Test](Images/redis_fixed_window_Stress_Test.png)
 
 ### Memory Footprint Under Stress
 The C++ container maintains a minimal memory footprint (under 15MB) even when flooded with 1000 concurrent connections, proving the efficiency of C++20 memory management over GC languages.
-![Memory Footprint](images/Memory_FootPrint_StressTest.png)
+![Memory Footprint](Images/Memory_FootPrint_StressTest.png)
 
 ---
 
