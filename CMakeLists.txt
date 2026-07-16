@@ -31,6 +31,7 @@ endif()
 set(SOURCES
     src/main.cpp
     src/http/HttpServer.cpp
+    src/core/RateLimiterFactory.cpp
     src/algorithms/FixedWindowLimiter.cpp
     src/algorithms/SlidingWindowLogLimiter.cpp
     src/algorithms/SlidingWindowCounterLimiter.cpp

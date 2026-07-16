@@ -37,21 +37,28 @@ bool RedisFixedWindowLimiter::allowRequest(const std::string& clientId)
 
         std::string key = "rate_limit:" + clientId + ":" + std::to_string(currentWindow);
 
-        // Atomically increment the counter in Redis
-        // TODO(Phase2): Replace INCR+EXPIRE with a Lua script to make key
-        // creation atomic. If the server crashes between INCR and EXPIRE,
-        // the key persists forever with no TTL (ghost entry).
-        long long currentRequests = redis_->incr(key);
+        // Atomic Lua script: INCR + EXPIRE in a single Redis round-trip.
+        // Why Lua? Redis executes Lua scripts atomically — no other command
+        // can interleave between INCR and EXPIRE. This prevents ghost keys
+        // (keys with no TTL) that would persist forever if the server crashed
+        // between two separate INCR and EXPIRE calls.
+        static const std::string LUA_SCRIPT = R"(
+            local current = redis.call('INCR', KEYS[1])
+            if current == 1 then
+                redis.call('EXPIRE', KEYS[1], ARGV[1])
+            end
+            return current
+        )";
 
-        if (currentRequests == 1)
-        {
-            // 2. Fixed: expire instead of expireKey
-            redis_->expire(key, std::chrono::seconds(windowSeconds));
-        }
+        auto result = redis_->eval<long long>(
+            LUA_SCRIPT,
+            {key},                                   // KEYS[1]
+            {std::to_string(windowSeconds)}           // ARGV[1]
+        );
 
-        if (currentRequests <= config_.maxRequests)
+        if (result <= config_.maxRequests)
         {
-            return true; // 3. Fixed: true instead of ture
+            return true;
         }
 
         return false;

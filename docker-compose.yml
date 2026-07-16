@@ -10,7 +10,11 @@ services:
     ports:
       - "8080:8080"
     environment:
-      #This overrides the default 127.0.0.1 in our main.cpp
+      # Algorithm selection: fixed_window | token_bucket | leaky_bucket
+      #   sliding_window_log | sliding_window_counter | redis_fixed_window
+      - ALGORITHM=redis_fixed_window
       - REDIS_URI=tcp://redis:6379
+      - MAX_REQUESTS=5
+      - WINDOW_SECONDS=60
     depends_on:
       - redis
