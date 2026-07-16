@@ -15,6 +15,16 @@
 class RateLimiterFactory
 {
 public:
+    // Supported algorithm names:
+    //   "fixed_window"           — Fixed Window Counter
+    //   "token_bucket"           — Token Bucket (AWS/Stripe style)
+    //   "leaky_bucket"           — Leaky Bucket (constant drain)
+    //   "sliding_window_log"     — Sliding Window Log (exact timestamps)
+    //   "sliding_window_counter" — Sliding Window Counter (weighted estimate)
+    //   "redis_fixed_window"     — Redis-backed Fixed Window (distributed)
+    //
+    // redisUri is only used when algorithm == "redis_fixed_window".
+    // Throws std::invalid_argument for unrecognized algorithm names.
     
     static std::unique_ptr<IRateLimiter> create(
         const std::string& algorithm,
