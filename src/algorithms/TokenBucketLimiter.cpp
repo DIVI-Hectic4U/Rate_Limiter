@@ -12,7 +12,7 @@ TokenBucketLimiter::TokenBucketLimiter(const Config& config)
 
     if(config_.windowSize <= std::chrono::seconds(0))
     {
-        throw std::invalid_argument("windowSize myst be greater than zero.");
+        throw std::invalid_argument("windowSize must be greater than zero.");
     }
 
     auto windowSeconds = std::chrono::duration_cast<std::chrono::seconds>(config_.windowSize).count();
@@ -21,6 +21,7 @@ TokenBucketLimiter::TokenBucketLimiter(const Config& config)
 
 bool TokenBucketLimiter::allowRequest(const std::string& clientId)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto now = std::chrono::steady_clock::now();
 
     auto it = users_.find(clientId);

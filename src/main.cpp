@@ -1,6 +1,7 @@
 #include <chrono>
 #include <iostream>
 #include <stdexcept>
+#include <cstdlib>
 
 #ifdef ENABLE_REDIS
 #include "../include/algorithms/RedisFixedWindowLimiter.h"
@@ -12,6 +13,7 @@
 #include "../include/algorithms/LeakyBucketLimiter.h"
 #endif
 
+#include "../include/core/IRateLimiter.h"
 #include "../include/http/HttpServer.h"
 
 int main()
@@ -29,8 +31,11 @@ int main()
         // TokenBucketLimiter limiter(config);
         // LeakyBucketLimiter limiter(config);
 #ifdef ENABLE_REDIS
-        std::cout << "Connecting to Redis cluster...\n";
-        RedisFixedWindowLimiter limiter(config, "tcp://127.0.0.1:6379");
+        const char* redisUriEnv = std::getenv("REDIS_URI");
+        std::string redisUri = redisUriEnv ? redisUriEnv : "tcp://127.0.0.1:6379";
+
+        std::cout << "[Config] Distributed Redis Limiter Enabled. Connecting to " << redisUri << "...\n";
+        RedisFixedWindowLimiter limiter(config, redisUri);
 #else   
         std::cout << "[Config] Local Memory Limiter Enabled (Leaky Bucket). \n";
         LeakyBucketLimiter limiter(config);

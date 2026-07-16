@@ -1,14 +1,14 @@
 #pragma once
 
-#include "../algorithms/FixedWindowLimiter.h"
+#include "../core/IRateLimiter.h"
 
 class Simulator
 {
     public:
-        explicit Simulator(FixedWindowLimiter& limiter);
+        explicit Simulator(IRateLimiter& limiter);
 
         void run();
 
     private:
-        FixedWindowLimiter& limiter_;
+        IRateLimiter& limiter_;
 };

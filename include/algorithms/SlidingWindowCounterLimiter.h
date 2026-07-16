@@ -1,8 +1,9 @@
 #pragma once
 
-#include<string>
-#include<unordered_map>
-#include<chrono>
+#include <string>
+#include <unordered_map>
+#include <chrono>
+#include <mutex>
 
 #include "../core/Config.h"
 #include "../core/SlidingWindowCounterData.h"
@@ -16,4 +17,5 @@ public:
 private:
     Config config_;
     std::unordered_map<std::string,SlidingWindowCounterData> users_;
+    std::mutex mutex_;
 };

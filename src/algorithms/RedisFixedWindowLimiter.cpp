@@ -1,60 +1,64 @@
-#ifdef ENABLE_REDIS
-
 #include "../../include/algorithms/RedisFixedWindowLimiter.h"
+#include <iostream>
 #include <stdexcept>
 #include <chrono>
 
 RedisFixedWindowLimiter::RedisFixedWindowLimiter(const Config& config, const std::string& redisUri)
     : config_(config)
 {
-    if(config_.maxRequests <= 0)
+    if (config_.maxRequests <= 0)
     {
         throw std::invalid_argument("maxRequests must be greater than zero.");
     }
-
-    if(config_.windowSize <= std::chrono::seconds(0))
+    if (config_.windowSize <= std::chrono::seconds(0))
     {
         throw std::invalid_argument("windowSize must be greater than zero.");
     }
 
-    try
+    try 
     {
-        // Initialize the redis
         redis_ = std::make_unique<sw::redis::Redis>(redisUri);
     }
-    catch(const std::redis::Error& e)
+    catch (const sw::redis::Error& e) // 1. Fixed: sw::redis::Error
     {
         throw std::runtime_error(std::string("Failed to connect to Redis: ") + e.what());
     }
-    
 }
+
+RedisFixedWindowLimiter::~RedisFixedWindowLimiter() = default;
 
 bool RedisFixedWindowLimiter::allowRequest(const std::string& clientId)
 {
-    try
+    try 
     {
-        // prefix keys to avoid collisions in shared Redis instance
-        std::string key = "rate_limit:fixed:" + clientId;
+        auto now = std::chrono::system_clock::now();
+        auto windowSeconds = std::chrono::duration_cast<std::chrono::seconds>(config_.windowSize).count();
+        auto currentWindow = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count() / windowSeconds;
 
-        long long currentCount = redis_->incr(key);
-        
-        if(currentCount == 1)
+        std::string key = "rate_limit:" + clientId + ":" + std::to_string(currentWindow);
+
+        // Atomically increment the counter in Redis
+        // TODO(Phase2): Replace INCR+EXPIRE with a Lua script to make key
+        // creation atomic. If the server crashes between INCR and EXPIRE,
+        // the key persists forever with no TTL (ghost entry).
+        long long currentRequests = redis_->incr(key);
+
+        if (currentRequests == 1)
         {
-            auto windowSeconds = std::chrono::duration_cast<std::chrono::seconds>(config_.windowSize).count();
-            redis_->expireKey(key, windowSeconds);
+            // 2. Fixed: expire instead of expireKey
+            redis_->expire(key, std::chrono::seconds(windowSeconds));
         }
 
-        if(currentCount <= config_.maxRequests)
+        if (currentRequests <= config_.maxRequests)
         {
-            return ture;
+            return true; // 3. Fixed: true instead of ture
         }
 
         return false;
     }
     catch (const sw::redis::Error& e)
     {
-        throw std::runtime_error(std::string("Redis operation Failed: ") + e.what());
+        std::cerr << "[Redis Error] " << e.what() << ". Denying request for safety.\n";
+        return false;
     }
 }
-
-#endif

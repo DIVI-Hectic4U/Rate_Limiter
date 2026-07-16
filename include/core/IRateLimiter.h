@@ -1,6 +1,7 @@
 #pragma once
 
-#include<string>
+#include <string>
+#include "Config.h" // <-- Include your existing Config.h instead of defining it twice!
 
 class IRateLimiter
 {

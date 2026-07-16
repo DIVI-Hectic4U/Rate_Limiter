@@ -1,71 +1,49 @@
 #include "../../include/http/HttpServer.h"
-
-#include <crow.h>
+#include <iostream>
 
 HttpServer::HttpServer(IRateLimiter& limiter)
-        :limiter_(limiter)
+    : limiter_(limiter), app_(std::make_unique<crow::SimpleApp>())
 {
+    setupRoutes();
 }
 
-void HttpServer::setupRoutes(crow::SimpleApp& app)
+HttpServer::~HttpServer() = default;
+
+void HttpServer::setupRoutes()
 {
-    // 1.Health Check Endpoint (For Docker/Kubernetes)
-    CROW_ROUTE(app,"/health")
-    ([]()
-    {
-        crow::json::wvalue response;
-        response["status"] = "UP";
-        return crow::response(200,response);
-    });
-
-    // 2.Versioned API EndPoint
-    CROW_ROUTE(app, "/api/v1/rate-limit")
-        .methods(crow::HTTPMethod::Post)
-    ([this](const crow::request& req)
-    {
+    // We use -> because app_ is now a secure std::unique_ptr
+    CROW_ROUTE((*app_), "/api/v1/rate-limit").methods(crow::HTTPMethod::POST)
+    ([this](const crow::request& req) { 
         auto body = crow::json::load(req.body);
-
-        if(!body)
+        
+        if (!body || !body.has("clientId"))
         {
-            crow::json::wvalue error;
-            error["error"] = "Invalid JSON payload";
-            return crow::response(400, error);
-        }
-
-        if(!body.has("clientId"))
-        {
-            crow::json::wvalue error;
-            error["error"] = "Missing 'clientId' key in JSON.";
-            return crow::response(400,error);
+            return crow::response(400, "Invalid JSON: Missing 'clientId' field\n");
         }
 
         std::string clientId = body["clientId"].s();
-
         bool allowed = limiter_.allowRequest(clientId);
 
-        crow::json::wvalue body_response;
-        body_response["clientId"] = clientId;
-        body_response["allowed"] = allowed;
-
-        // 3. Construct the response with proper status codes
-        auto res = crow::response(allowed ? 200 : 429, body_response);
-
-        // 4. Inject Standard Rate Limit HTTP headers
+        crow::response res;
         res.add_header("X-RateLimit-Allowed", allowed ? "true" : "false");
+
+        if (allowed)
+        {
+            res.code = 200;
+            res.body = "Request Allowed for client: " + clientId + "\n";
+        }
+        else
+        {
+            res.code = 429; // HTTP 429: Too Many Requests
+            res.body = "Rate Limit Exceeded for client: " + clientId + "\n";
+        }
 
         return res;
     });
 }
 
-void HttpServer::start()
+void HttpServer::start(int port)
 {
-    crow::SimpleApp app;
-    
-    setupRoutes(app);
-    
-    app.bindaddr("127.0.0.1")
-        .port(8080)
-        .multithreaded()
-        .run();
-    
+    std::cout << "[HttpServer] Starting server on port " << port << "...\n";
+    app_->port(port).multithreaded().run();
 }

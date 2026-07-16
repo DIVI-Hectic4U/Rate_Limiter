@@ -2,6 +2,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <mutex>
 
 #include "../core/Config.h"
 #include "../core/SlidingWindowData.h"
@@ -16,6 +17,6 @@ public:
 
 private:
     Config config_;
-
     std::unordered_map<std::string, SlidingWindowData> users_;
+    std::mutex mutex_;
 };

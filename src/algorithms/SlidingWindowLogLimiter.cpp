@@ -1,4 +1,5 @@
 #include "../../include/algorithms/SlidingWindowLogLimiter.h"
+#include <stdexcept>
 
 SlidingWindowLogLimiter::SlidingWindowLogLimiter(const Config& config)
     : config_(config)
@@ -16,6 +17,7 @@ SlidingWindowLogLimiter::SlidingWindowLogLimiter(const Config& config)
 
 bool SlidingWindowLogLimiter::allowRequest(const std::string& clientId)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto now = std::chrono::steady_clock::now();
 
     auto& user = users_[clientId];

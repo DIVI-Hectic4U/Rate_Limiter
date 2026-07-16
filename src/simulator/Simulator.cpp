@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-Simulator::Simulator(FixedWindowLimiter& limiter)
+Simulator::Simulator(IRateLimiter& limiter)
     : limiter_(limiter)
 {
 

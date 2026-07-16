@@ -1,0 +1,16 @@
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      #This overrides the default 127.0.0.1 in our main.cpp
+      - REDIS_URI=tcp://redis:6379
+    depends_on:
+      - redis

@@ -3,8 +3,17 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <chrono>
 
-#include "../core/UserData.h"
+// LEGACY: This storage abstraction is not currently used by any algorithm.
+// Each limiter manages its own per-client unordered_map internally.
+// Kept for potential future refactoring into a unified storage backend.
+
+struct UserData
+{
+    int requestCount = 0;
+    std::chrono::steady_clock::time_point windowStart;
+};
 
 class InMemoryStorage{
 

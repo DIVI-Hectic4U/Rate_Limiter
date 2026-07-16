@@ -18,6 +18,7 @@ FixedWindowLimiter::FixedWindowLimiter(const Config& config)
 
 bool FixedWindowLimiter::allowRequest(const std::string& clientId)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto now = std::chrono::steady_clock::now();
 
     auto it = users_.find(clientId);
